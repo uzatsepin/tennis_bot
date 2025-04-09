@@ -32,12 +32,43 @@ export async function getGameById(gameId: string): Promise<Game | null> {
       query = { _id: gameId };
     }
     
-    return getGamesCollection().findOne(query);
+    const pipeline = [
+      { $match: query },
+      // Lookup для player1
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'player1Id',
+          foreignField: 'telegramId',
+          as: 'player1'
+        }
+      },
+      // Lookup для player2
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'player2Id',
+          foreignField: 'telegramId',
+          as: 'player2'
+        }
+      },
+      // Преобразуем массивы в объекты (берем первый элемент)
+      {
+        $addFields: {
+          player1: { $arrayElemAt: ['$player1', 0] },
+          player2: { $arrayElemAt: ['$player2', 0] }
+        }
+      }
+    ];
+    
+    const result = await getGamesCollection().aggregate(pipeline).toArray();
+    return result.length > 0 ? result[0] as unknown as Game : null;
   } catch (error) {
     console.error('Error in getGameById:', error);
     return null;
   }
 }
+
 
 /**
  * Обновить данные игры
@@ -70,38 +101,135 @@ export async function updateGame(gameId: string, update: Partial<Game>): Promise
  * Получить все игры пользователя
  */
 export async function getUserGames(userId: number): Promise<Game[]> {
-  return getGamesCollection().find({
-    $or: [
-      { player1Id: userId },
-      { player2Id: userId }
-    ]
-  }).sort({ scheduledTime: -1 }).toArray();
+  const pipeline = [
+    {
+      $match: {
+        $or: [
+          { player1Id: userId },
+          { player2Id: userId }
+        ]
+      }
+    },
+    { $sort: { scheduledTime: -1 } },
+    // Lookup для player1
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'player1Id',
+        foreignField: 'telegramId',
+        as: 'player1'
+      }
+    },
+    // Lookup для player2
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'player2Id',
+        foreignField: 'telegramId',
+        as: 'player2'
+      }
+    },
+    // Преобразуем массивы в объекты (берем первый элемент)
+    {
+      $addFields: {
+        player1: { $arrayElemAt: ['$player1', 0] },
+        player2: { $arrayElemAt: ['$player2', 0] }
+      }
+    }
+  ];
+
+  return getGamesCollection().aggregate(pipeline).toArray() as unknown as Promise<Game[]>;
 }
 
 /**
  * Получить незавершенные игры пользователя
  */
 export async function getUserPendingGames(userId: number): Promise<Game[]> {
-  return getGamesCollection().find({
-    $or: [
-      { player1Id: userId },
-      { player2Id: userId }
-    ],
-    status: { $in: [GameStatus.DRAFT, GameStatus.PENDING, GameStatus.SCHEDULED] }
-  }).sort({ scheduledTime: 1 }).toArray();
+  const pipeline = [
+    {
+      $match: {
+        $or: [
+          { player1Id: userId },
+          { player2Id: userId }
+        ],
+        status: { $in: [GameStatus.DRAFT, GameStatus.PENDING, GameStatus.SCHEDULED] }
+      }
+    },
+    { $sort: { scheduledTime: 1 } },
+    // Lookup для player1
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'player1Id',
+        foreignField: 'telegramId',
+        as: 'player1'
+      }
+    },
+    // Lookup для player2
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'player2Id',
+        foreignField: 'telegramId',
+        as: 'player2'
+      }
+    },
+    // Преобразуем массивы в объекты
+    {
+      $addFields: {
+        player1: { $arrayElemAt: ['$player1', 0] },
+        player2: { $arrayElemAt: ['$player2', 0] }
+      }
+    }
+  ];
+
+  return getGamesCollection().aggregate(pipeline).toArray() as unknown as Promise<Game[]>;
 }
 
 /**
  * Получить завершенные игры пользователя
  */
 export async function getUserCompletedGames(userId: number, limit: number = 10): Promise<Game[]> {
-  return getGamesCollection().find({
-    $or: [
-      { player1Id: userId },
-      { player2Id: userId }
-    ],
-    status: GameStatus.COMPLETED
-  }).sort({ scheduledTime: -1 }).limit(limit).toArray();
+  const pipeline = [
+    {
+      $match: {
+        $or: [
+          { player1Id: userId },
+          { player2Id: userId }
+        ],
+        status: GameStatus.COMPLETED
+      }
+    },
+    { $sort: { scheduledTime: -1 } },
+    { $limit: limit },
+    // Lookup для player1
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'player1Id',
+        foreignField: 'telegramId',
+        as: 'player1'
+      }
+    },
+    // Lookup для player2
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'player2Id',
+        foreignField: 'telegramId',
+        as: 'player2'
+      }
+    },
+    // Преобразуем массивы в объекты
+    {
+      $addFields: {
+        player1: { $arrayElemAt: ['$player1', 0] },
+        player2: { $arrayElemAt: ['$player2', 0] }
+      }
+    }
+  ];
+
+  return getGamesCollection().aggregate(pipeline).toArray() as unknown as Promise<Game[]>;
 }
 
 /**

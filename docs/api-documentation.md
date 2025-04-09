@@ -46,6 +46,8 @@ interface Game {
   createdAt: Date;           // Дата создания
   updatedAt: Date;           // Дата обновления
   createdBy: number;         // ID создателя игры в Telegram
+  player1: User;
+  player2: User;
 }
 
 // Рейтинг
@@ -55,7 +57,8 @@ interface Ranking {
   username: string;          // Имя пользователя
   points: number;            // Очки рейтинга
   position: number;          // Позиция в рейтинге
-  updatedAt: Date;           // Дата обновления
+  updatedAt: Date;         // Дата обновления
+  user: User;
 }
 ```
 

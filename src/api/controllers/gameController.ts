@@ -11,18 +11,47 @@ export async function getGames(req: Request, res: Response): Promise<void> {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
     const status = req.query.status as string | undefined;
     
-    // Получаем все игры напрямую из коллекции
-    const collection = getDb().collection<Game>('games');
+    // Получаем коллекцию игр
+    const gamesCollection = getDb().collection<Game>('games');
     
     // Формируем условия поиска, если указан статус
-    const query = status ? { status: status as GameStatus } : {};
+    const matchStage = status ? { $match: { status: status as GameStatus } } : { $match: {} };
     
-    const games = await collection.find(query)
-                                .sort({ scheduledTime: -1 })
-                                .limit(limit)
-                                .toArray();
+    // Создаем pipeline для агрегации
+    const pipeline = [
+      matchStage,
+      { $sort: { scheduledTime: -1 } },
+      { $limit: limit },
+      // Lookup для player1
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'player1Id',
+          foreignField: 'telegramId',
+          as: 'player1'
+        }
+      },
+      // Lookup для player2
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'player2Id',
+          foreignField: 'telegramId',
+          as: 'player2'
+        }
+      },
+      // Преобразуем массивы в объекты (берем первый и единственный элемент)
+      {
+        $addFields: {
+          player1: { $arrayElemAt: ['$player1', 0] },
+          player2: { $arrayElemAt: ['$player2', 0] }
+        }
+      }
+    ];
     
-    res.json(games);
+    const gamesWithUsers = await gamesCollection.aggregate(pipeline).toArray();
+    
+    res.json(gamesWithUsers);
   } catch (error) {
     console.error('Error in getGames controller:', error);
     res.status(500).json({ error: 'Не удалось получить игры' });
