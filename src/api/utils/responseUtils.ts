@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response, Request, NextFunction } from 'express';
 
 interface ErrorResponse {
   error: string;
@@ -38,13 +38,12 @@ export function sendError(res: Response, message: string, details?: any, status:
 }
 
 /**
- * Обработчик ошибок для асинхронных middleware
+ * Wraps async route handlers to automatically catch errors
  */
-export function asyncHandler(fn: Function) {
-  return (req: any, res: any, next: any) => {
-    Promise.resolve(fn(req, res, next)).catch((err) => {
-      console.error('API Error:', err);
-      sendError(res, 'Внутренняя ошибка сервера', process.env.NODE_ENV === 'development' ? err.stack : undefined);
+export const asyncHandler = (fn: Function) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch((error) => {
+      next(error); // Pass error to Express error handling middleware
     });
   };
-}
+};

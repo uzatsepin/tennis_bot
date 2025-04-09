@@ -1,6 +1,7 @@
 import { Collection, ObjectId } from 'mongodb';
 import { getDb } from '../db/connection';
 import { Game, GameStatus, OpponentStats } from './types';
+import * as rankingService from '../services/rankingService'; // Assuming there's a service for updating rankings
 
 /**
  * Получение коллекции игр
@@ -14,7 +15,11 @@ function getGamesCollection(): Collection<Game> {
  */
 export async function createGame(gameData: Omit<Game, '_id'>): Promise<Game> {
   const result = await getGamesCollection().insertOne(gameData);
-  return { ...gameData, _id: result.insertedId.toString() };
+  const createdGame = await getGameById(result.insertedId.toString());
+  if (!createdGame) {
+    throw new Error('Failed to retrieve created game');
+  }
+  return createdGame;
 }
 
 /**
@@ -69,7 +74,6 @@ export async function getGameById(gameId: string): Promise<Game | null> {
   }
 }
 
-
 /**
  * Обновить данные игры
  */
@@ -98,9 +102,69 @@ export async function updateGame(gameId: string, update: Partial<Game>): Promise
 }
 
 /**
+ * Обновить результаты игры
+ */
+export async function updateGameResults(
+  id: string,
+  results: { score: string; winnerId: number; status: GameStatus }
+): Promise<Game> {
+  try {
+    const db = getDb();
+    const gamesCollection = db.collection<Game>('games');
+
+    // Проверяем, что ID в правильном формате
+    let query: Record<string, any> = { _id: id };
+    try {
+      if (ObjectId.isValid(id)) {
+        query = { _id: new ObjectId(id) };
+      }
+    } catch (e) {
+      throw new Error('Invalid game ID format');
+    }
+
+    // Получаем текущие данные игры для определения участников
+    const currentGame = await getGameById(id);
+    if (!currentGame) {
+      throw new Error('Game not found');
+    }
+
+    // Обновляем игру с результатами
+    await gamesCollection.updateOne(
+      query,
+      { 
+        $set: { 
+          score: results.score,
+          winnerId: results.winnerId,
+          status: results.status,
+          updatedAt: new Date()
+        } 
+      }
+    );
+
+    // Получаем обновленную игру
+    const updatedGame = await getGameById(id);
+    if (!updatedGame) {
+      throw new Error('Failed to retrieve updated game');
+    }
+
+    // Обновляем рейтинг игроков
+    await rankingService.updateRankingsAfterGame(
+      currentGame.player1Id,
+      currentGame.player2Id,
+      results.winnerId
+    );
+
+    return updatedGame;
+  } catch (error) {
+    console.error('Error in updateGameResults:', error);
+    throw error;
+  }
+}
+
+/**
  * Получить все игры пользователя
  */
-export async function getUserGames(userId: number): Promise<Game[]> {
+export async function getUserGames(userId: number, status: GameStatus | undefined): Promise<Game[]> {
   const pipeline = [
     {
       $match: {

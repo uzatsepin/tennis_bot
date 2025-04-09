@@ -19,6 +19,8 @@ router.get('/games', asyncHandler(gameController.getGames));
 router.get('/games/count', asyncHandler(gameController.getGamesCount));
 router.get('/games/:id', asyncHandler(gameController.getGameById));
 router.get('/users/:id/games', asyncHandler(gameController.getUserGames));
+router.post('/games', asyncHandler(gameController.createGame));
+router.put('/games/:id/results', asyncHandler(gameController.submitGameResults));
 
 // Маршруты для рейтингов
 router.get('/rankings', asyncHandler(rankingController.getRankings));

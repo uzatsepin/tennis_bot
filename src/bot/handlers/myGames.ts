@@ -23,7 +23,7 @@ export async function handleMyGamesScheduled(ctx: Context) {
     if (!userId) return;
 
     // Get all user games and filter scheduled ones
-    const allGames = await GameModel.getUserGames(userId);
+    const allGames = await GameModel.getUserGames(userId, undefined);
     const scheduledGames = allGames.filter(game => game.status === GameStatus.SCHEDULED)
       .sort((a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime());
 

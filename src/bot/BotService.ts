@@ -1,6 +1,7 @@
 import { Bot, Context, session, SessionFlavor } from 'grammy';
 import config from '../config';
 import { BotSession } from '../models/types';
+import { setBotInstance } from './botInstance';
 
 // Імпорт обробників
 import { handleStartCommand, showMainMenu } from './handlers/startHandler';
@@ -98,6 +99,10 @@ export function createBot() {
 export function startBot() {
   const bot = createBot();
   console.log('Запуск Telegram бота...');
+  
+  // Store the bot instance for use in other modules
+  setBotInstance(bot);
+  
   bot.start();
   return bot;
 }

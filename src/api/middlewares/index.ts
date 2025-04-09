@@ -43,13 +43,26 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 }
 
 /**
- * Middleware для обработки ошибок
+ * Global error handler middleware
  */
-export function errorHandler(err: Error, req: Request, res: Response): void {
-  console.error('API Error:', err);
+export function errorHandler(err: any, req: Request, res: Response, next: NextFunction): void {
+  console.error('Error caught by global error handler:', err);
   
-  res.status(500).json({
-    error: 'Внутренняя ошибка сервера',
-    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
-  });
+  // Check if response headers have already been sent
+  if (res.headersSent) {
+    return next(err);
+  }
+  
+  // Ensure res is a proper Response object
+  if (typeof res.status === 'function') {
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({
+      error: err.message || 'Произошла ошибка на сервере.',
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+  } else {
+    // If res.status is not a function, there's a serious issue with the response object
+    console.error('Invalid response object in error handler');
+    next(err); // Pass to default Express error handler
+  }
 }
