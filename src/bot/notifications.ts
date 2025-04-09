@@ -2,10 +2,10 @@ import { Game } from '../models/types';
 import { getBotInstance } from './botInstance';
 
 /**
- * Отправляет уведомление о приглашении в игру
- * @param invitedPlayerId ID игрока, которого пригласили
- * @param inviterPlayerId ID игрока, который пригласил
- * @param game Информация об игре
+ * Відправляє сповіщення про запрошення до гри
+ * @param invitedPlayerId ID гравця, якого запросили
+ * @param inviterPlayerId ID гравця, який запросив
+ * @param game Інформація про гру
  */
 export async function sendGameInvitation(
   invitedPlayerId: number,
@@ -15,7 +15,7 @@ export async function sendGameInvitation(
   try {
     const bot = getBotInstance();
     
-    // Форматируем дату и время
+    // Форматуємо дату та час
     const dateOptions: Intl.DateTimeFormatOptions = {
       year: 'numeric',
       month: 'long',
@@ -24,29 +24,29 @@ export async function sendGameInvitation(
       minute: '2-digit'
     };
     
-    const formattedDate = new Date(game.scheduledTime).toLocaleDateString('ru-RU', dateOptions);
+    const formattedDate = new Date(game.scheduledTime).toLocaleDateString('uk-UA', dateOptions);
     
-    // Формируем текст сообщения
+    // Формуємо текст повідомлення
     const message = `
-Вас пригласили на игру! 📅
+🎾 Вас запросили на гру! 📅
 
-Игрок: ${game.player1Username}
-Дата: ${formattedDate}
+👤 Гравець: ${game.player1Username}
+🗓️ Дата: ${formattedDate}
 
-Для принятия приглашения нажмите на кнопку ниже.
+Для прийняття запрошення натисніть на кнопку нижче.
     `;
     
-    // Создаем клавиатуру с кнопками для принятия/отклонения
+    // Створюємо клавіатуру з кнопками для прийняття/відхилення
     const keyboard = {
       inline_keyboard: [
         [
-          { text: '✅ Принять', callback_data: `accept_game:${game._id}` },
-          { text: '❌ Отклонить', callback_data: `reject_game:${game._id}` }
+          { text: '✅ Прийняти', callback_data: `confirm_game:${game._id}` },
+          { text: '❌ Відхилити', callback_data: `reject_game:${game._id}` }
         ]
       ]
     };
     
-    // Отправляем сообщение
+    // Відправляємо повідомлення
     await bot.api.sendMessage(invitedPlayerId, message, {
       parse_mode: 'HTML',
       reply_markup: keyboard
@@ -60,8 +60,8 @@ export async function sendGameInvitation(
 }
 
 /**
- * Отправляет уведомление о результатах игры
- * @param game Информация об игре с результатами
+ * Відправляє сповіщення про результати гри
+ * @param game Інформація про гру з результатами
  */
 export async function sendGameResults(game: Game): Promise<void> {
   try {
@@ -71,32 +71,32 @@ export async function sendGameResults(game: Game): Promise<void> {
       throw new Error('Game results are incomplete');
     }
     
-    // Определяем победителя и проигравшего
+    // Визначаємо переможця та переможеного
     const winnerId = game.winnerId;
     const loserId = winnerId === game.player1Id ? game.player2Id : game.player1Id;
     const winnerUsername = winnerId === game.player1Id ? game.player1Username : game.player2Username;
     
-    // Формируем текст сообщения для победителя
+    // Формуємо текст повідомлення для переможця
     const winnerMessage = `
-🏆 Поздравляем с победой! 🏆
+🏆 Вітаємо з перемогою! 🎉
 
-Результат матча:
+📊 Результат матчу:
 ${game.score}
 
-Ваш рейтинг был обновлен.
+📈 Ваш рейтинг було оновлено.
     `;
     
-    // Формируем текст сообщения для проигравшего
+    // Формуємо текст повідомлення для переможеного
     const loserMessage = `
-Результаты матча:
+🎾 Результати матчу:
 
-Победитель: ${winnerUsername}
-Счет: ${game.score}
+🥇 Переможець: ${winnerUsername}
+📊 Рахунок: ${game.score}
 
-Ваш рейтинг был обновлен.
+📈 Ваш рейтинг було оновлено.
     `;
     
-    // Отправляем сообщения обоим игрокам
+    // Відправляємо повідомлення обом гравцям
     await Promise.all([
       bot.api.sendMessage(winnerId, winnerMessage, { parse_mode: 'HTML' }),
       bot.api.sendMessage(loserId, loserMessage, { parse_mode: 'HTML' })

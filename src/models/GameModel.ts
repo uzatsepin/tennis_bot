@@ -162,6 +162,48 @@ export async function updateGameResults(
 }
 
 /**
+ * Оновити статус гри
+ */
+export async function updateGameStatus(id: string, status: GameStatus): Promise<Game> {
+  try {
+    const db = getDb();
+    const gamesCollection = db.collection<Game>('games');
+
+    // Перевіряємо, що ID у правильному форматі
+    let query: Record<string, any> = { _id: id };
+    try {
+      if (ObjectId.isValid(id)) {
+        query = { _id: new ObjectId(id) };
+      }
+    } catch (e) {
+      throw new Error('Invalid game ID format');
+    }
+
+    // Оновлюємо статус гри
+    await gamesCollection.updateOne(
+      query,
+      { 
+        $set: { 
+          status: status,
+          updatedAt: new Date()
+        } 
+      }
+    );
+
+    // Отримуємо оновлену гру
+    const updatedGame = await getGameById(id);
+    if (!updatedGame) {
+      throw new Error('Failed to retrieve updated game');
+    }
+
+    return updatedGame;
+  } catch (error) {
+    console.error('Error in updateGameStatus:', error);
+    throw error;
+  }
+}
+
+/**
  * Получить все игры пользователя
  */
 export async function getUserGames(userId: number, status: GameStatus | undefined): Promise<Game[]> {

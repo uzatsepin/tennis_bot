@@ -1,148 +1,177 @@
-import { Context, SessionFlavor } from 'grammy';
+import { BotContext } from '../BotService';
 import * as gameModel from '../../models/GameModel';
-import { BotSession, GameStatus } from '../../models/types';
-import { createBackToMenuKeyboard } from '../keyboards';
-
-type BotContext = Context & SessionFlavor<BotSession>;
+import { GameStatus } from '../../models/types';
 
 /**
- * Обробник підтвердження запрошення на гру
+ * Обробник підтвердження гри
  */
 export async function handleConfirmGame(ctx: BotContext): Promise<void> {
-  const gameId = ctx.match?.[1];
-  if (!gameId) {
-    await ctx.editMessageText('❌ Помилка обробки запрошення. Спробуйте ще раз або зв\'яжіться з організатором гри.', {
-      reply_markup: createBackToMenuKeyboard()
-    });
-    return;
-  }
-
-  console.log(`Processing confirm_game with gameId: ${gameId}`);
-
   try {
-    // Получаем данные о игре
+    // Отримуємо ID гри з даних callback
+    const gameId = ctx.callbackQuery?.data?.split(':')[1];
+    
+    if (!gameId) {
+      await ctx.answerCallbackQuery({
+        text: '❌ Помилка: Не вдалося отримати ID гри',
+        show_alert: true
+      });
+      return;
+    }
+    
+    // Отримуємо інформацію про гру
     const game = await gameModel.getGameById(gameId);
-    console.log(`Game found for ID ${gameId}:`, game);
-
+    
     if (!game) {
-      await ctx.editMessageText('❌ Гра не знайдена. Можливо, вона була скасована.', {
-        reply_markup: createBackToMenuKeyboard()
+      await ctx.answerCallbackQuery({
+        text: '❌ Помилка: Гру не знайдено',
+        show_alert: true
       });
       return;
     }
-
-    // Проверяем, что пользователь является оппонентом в игре
-    const user = ctx.from;
-    if (!user || (user.id !== game.player2Id)) {
-      await ctx.editMessageText('⛔ Ви не можете підтвердити цю гру, оскільки вона призначена для іншого користувача.', {
-        reply_markup: createBackToMenuKeyboard()
-      });
-      return;
-    }
-
-    // Проверяем, что игра все еще в статусе ожидания подтверждения
+    
+    // Перевіряємо, що гра очікує підтвердження
     if (game.status !== GameStatus.PENDING) {
-      await ctx.editMessageText('⚠️ Ця гра вже не очікує на підтвердження.', {
-        reply_markup: createBackToMenuKeyboard()
+      await ctx.answerCallbackQuery({
+        text: '⚠️ Ця гра вже не очікує підтвердження',
+        show_alert: true
       });
       return;
     }
-
-    // Обновляем статус игры на "запланировано"
-    await gameModel.updateGame(gameId, {
-      status: GameStatus.SCHEDULED,
-      updatedAt: new Date()
-    });
-
-    // Отправляем уведомление оппоненту
-    await ctx.editMessageText(`✅ Ви підтвердили гру з @${game.player1Username} на ${new Date(game.scheduledTime).toLocaleString()}. 🎾 Гра запланована!`, {
-      reply_markup: createBackToMenuKeyboard()
-    });
-
-    // Отправляем уведомление инициатору
-    try {
-      await ctx.api.sendMessage(
-        game.player1Id,
-        `🎉 @${game.player2Username} підтвердив(ла) вашу пропозицію зіграти в теніс ${new Date(game.scheduledTime).toLocaleString()}. 🎾 Гра запланована!`
-      );
-    } catch (error) {
-      console.error('Error sending confirmation notification to initiator:', error);
+    
+    // Перевіряємо, що користувач, який натиснув кнопку, є запрошеним гравцем
+    const currentUserId = ctx.from?.id;
+    if (game.player2Id !== currentUserId) {
+      await ctx.answerCallbackQuery({
+        text: '⛔ Ви не можете підтвердити цю гру',
+        show_alert: true
+      });
+      return;
     }
+    
+    // Оновлюємо статус гри на "заплановану"
+    await gameModel.updateGameStatus(gameId, GameStatus.SCHEDULED);
+    
+    // Відправляємо повідомлення про успішне підтвердження
+    await ctx.answerCallbackQuery({
+      text: '✅ Гру підтверджено! Очікуємо вас на корті.',
+      show_alert: true
+    });
+    
+    // Оновлюємо повідомлення, прибираємо кнопки
+    await ctx.editMessageText(
+      `🎾 Гру підтверджено! ✅\n\nГравець: ${game.player1Username}\nДата: ${new Date(game.scheduledTime).toLocaleDateString('uk-UA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}\n\nГарної гри! 🏆`
+    );
+    
+    // Відправляємо сповіщення гравцю, який створив гру
+    await ctx.api.sendMessage(
+      game.player1Id,
+      `🎉 Гравець ${game.player2Username} прийняв ваше запрошення на гру!\n\nДата: ${new Date(game.scheduledTime).toLocaleDateString('uk-UA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}\n\nГарної гри! 🏆`
+    );
+    
   } catch (error) {
-    console.error(`Error handling game confirmation for ID ${gameId}:`, error);
-    await ctx.editMessageText('❌ Виникла помилка при підтвердженні гри. Будь ласка, спробуйте пізніше.', {
-      reply_markup: createBackToMenuKeyboard()
+    console.error('Error handling game confirmation:', error);
+    await ctx.answerCallbackQuery({
+      text: '❌ Виникла помилка при підтвердженні гри',
+      show_alert: true
     });
   }
 }
 
 /**
- * Обробник відхилення запрошення на гру
+ * Обробник відхилення гри
  */
 export async function handleRejectGame(ctx: BotContext): Promise<void> {
-  const gameId = ctx.match?.[1];
-  if (!gameId) {
-    await ctx.editMessageText('❌ Помилка обробки запрошення. Спробуйте ще раз або зв\'яжіться з організатором гри.', {
-      reply_markup: createBackToMenuKeyboard()
-    });
-    return;
-  }
-
-  console.log(`Processing reject_game with gameId: ${gameId}`);
-
   try {
-    // Получаем данные о игре
+    // Отримуємо ID гри з даних callback
+    const gameId = ctx.callbackQuery?.data?.split(':')[1];
+    
+    if (!gameId) {
+      await ctx.answerCallbackQuery({
+        text: '❌ Помилка: Не вдалося отримати ID гри',
+        show_alert: true
+      });
+      return;
+    }
+    
+    // Отримуємо інформацію про гру
     const game = await gameModel.getGameById(gameId);
-    console.log(`Game found for ID ${gameId}:`, game);
-
+    
     if (!game) {
-      await ctx.editMessageText('❌ Гра не знайдена. Можливо, вона була скасована.', {
-        reply_markup: createBackToMenuKeyboard()
+      await ctx.answerCallbackQuery({
+        text: '❌ Помилка: Гру не знайдено',
+        show_alert: true
       });
       return;
     }
-
-    // Проверяем, что пользователь является оппонентом в игре
-    const user = ctx.from;
-    if (!user || (user.id !== game.player2Id)) {
-      await ctx.editMessageText('⛔ Ви не можете відхилити цю гру, оскільки вона призначена для іншого користувача.', {
-        reply_markup: createBackToMenuKeyboard()
-      });
-      return;
-    }
-
-    // Проверяем, что игра все еще в статусе ожидания подтверждения
+    
+    // Перевіряємо, що гра очікує підтвердження
     if (game.status !== GameStatus.PENDING) {
-      await ctx.editMessageText('⚠️ Ця гра вже не очікує на підтвердження.', {
-        reply_markup: createBackToMenuKeyboard()
+      await ctx.answerCallbackQuery({
+        text: '⚠️ Ця гра вже не очікує підтвердження',
+        show_alert: true
       });
       return;
     }
-
-    // Обновляем статус игры на "отклонено"
-    await gameModel.updateGame(gameId, {
-      status: GameStatus.REJECTED,
-      updatedAt: new Date()
-    });
-
-    // Отправляем уведомление оппоненту
-    await ctx.editMessageText(`❌ Ви відхилили гру з @${game.player1Username} на ${new Date(game.scheduledTime).toLocaleString()}.`, {
-      reply_markup: createBackToMenuKeyboard()
-    });
-
-    // Отправляем уведомление инициатору
-    try {
-      await ctx.api.sendMessage(
-        game.player1Id,
-        `⛔ @${game.player2Username} відхилив(ла) вашу пропозицію зіграти в теніс ${new Date(game.scheduledTime).toLocaleString()}.`
-      );
-    } catch (error) {
-      console.error('Error sending rejection notification to initiator:', error);
+    
+    // Перевіряємо, що користувач, який натиснув кнопку, є запрошеним гравцем
+    const currentUserId = ctx.from?.id;
+    if (game.player2Id !== currentUserId) {
+      await ctx.answerCallbackQuery({
+        text: '⛔ Ви не можете відхилити цю гру',
+        show_alert: true
+      });
+      return;
     }
+    
+    // Оновлюємо статус гри на "відхилено"
+    await gameModel.updateGameStatus(gameId, GameStatus.REJECTED);
+    
+    // Відправляємо повідомлення про відхилення
+    await ctx.answerCallbackQuery({
+      text: '❌ Ви відхилили запрошення на гру',
+      show_alert: true
+    });
+    
+    // Оновлюємо повідомлення, прибираємо кнопки
+    await ctx.editMessageText(
+      `🎾 Гру відхилено ❌\n\nГравець: ${game.player1Username}\nДата: ${new Date(game.scheduledTime).toLocaleDateString('uk-UA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`
+    );
+    
+    // Відправляємо сповіщення гравцю, який створив гру
+    await ctx.api.sendMessage(
+      game.player1Id,
+      `😔 На жаль, гравець ${game.player2Username} відхилив ваше запрошення на гру.\n\nДата: ${new Date(game.scheduledTime).toLocaleDateString('uk-UA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`
+    );
+    
   } catch (error) {
-    console.error(`Error handling game rejection for ID ${gameId}:`, error);
-    await ctx.editMessageText('❌ Виникла помилка при відхиленні гри. Будь ласка, спробуйте пізніше.', {
-      reply_markup: createBackToMenuKeyboard()
+    console.error('Error handling game rejection:', error);
+    await ctx.answerCallbackQuery({
+      text: '❌ Виникла помилка при відхиленні гри',
+      show_alert: true
     });
   }
 }
