@@ -1,0 +1,215 @@
+{
+  "info": {
+    "name": "Tennis Club API",
+    "description": "API для доступа к данным теннисного клуба, включая пользователей, игры и рейтинги",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Основная информация",
+      "item": [
+        {
+          "name": "Домашняя страница API",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Получение основной информации API"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Пользователи",
+      "item": [
+        {
+          "name": "Получить всех пользователей",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/users?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Ограничение количества возвращаемых пользователей"
+                }
+              ]
+            },
+            "description": "Получение списка всех пользователей с возможностью ограничения количества"
+          },
+          "response": []
+        },
+        {
+          "name": "Получить пользователя по ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/users/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "123456789",
+                  "description": "Telegram ID пользователя"
+                }
+              ]
+            },
+            "description": "Получение данных о конкретном пользователе по его Telegram ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Получить количество пользователей",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/users/count",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "count"]
+            },
+            "description": "Получение общего количества зарегистрированных пользователей"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Игры",
+      "item": [
+        {
+          "name": "Получить все игры",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/games?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "games"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Ограничение количества возвращаемых игр"
+                }
+              ]
+            },
+            "description": "Получение списка всех игр с возможностью ограничения количества"
+          },
+          "response": []
+        },
+        {
+          "name": "Получить игру по ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/games/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "games", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "60f7c5b9c5abcd0015abcdef",
+                  "description": "ID игры"
+                }
+              ]
+            },
+            "description": "Получение данных о конкретной игре по её ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Получить игры пользователя",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/users/:id/games",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", ":id", "games"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "123456789",
+                  "description": "Telegram ID пользователя"
+                }
+              ]
+            },
+            "description": "Получение всех игр, в которых участвовал указанный пользователь"
+          },
+          "response": []
+        },
+        {
+          "name": "Получить статистику игр",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/games/count",
+              "host": ["{{base_url}}"],
+              "path": ["api", "games", "count"]
+            },
+            "description": "Получение статистики по играм (общее количество и количество завершенных игр)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Рейтинги",
+      "item": [
+        {
+          "name": "Получить рейтинги игроков",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/rankings?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rankings"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Ограничение количества возвращаемых рейтингов"
+                }
+              ]
+            },
+            "description": "Получение рейтинга игроков с возможностью ограничения количества"
+          },
+          "response": []
+        },
+        {
+          "name": "Получить рейтинг пользователя",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/users/:id/ranking",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", ":id", "ranking"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "123456789",
+                  "description": "Telegram ID пользователя"
+                }
+              ]
+            },
+            "description": "Получение данных о рейтинге конкретного пользователя по его Telegram ID"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
