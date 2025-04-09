@@ -14,6 +14,12 @@ import {
 } from './handlers/gameHandlers';
 import { handleMyStats, handleRankings } from './handlers/statsHandlers';
 import { handleConfirmGame, handleRejectGame } from './handlers/invitationHandlers';
+import { 
+  handleMyGames, 
+  handleMyGamesScheduled, 
+  handleMyGamesCompleted, 
+  handleMyGamesPending 
+} from './handlers/myGames';
 
 // Тип контексту з сесією
 export type BotContext = Context & SessionFlavor<BotSession>;
@@ -51,6 +57,10 @@ export function createBot() {
   bot.callbackQuery('add_result', handleAddResult);
   bot.callbackQuery('my_stats', handleMyStats);
   bot.callbackQuery('rankings', handleRankings);
+  bot.callbackQuery('my_games', handleMyGames);
+  bot.callbackQuery('my_games_scheduled', handleMyGamesScheduled);
+  bot.callbackQuery('my_games_completed', handleMyGamesCompleted);
+  bot.callbackQuery('my_games_pending', handleMyGamesPending);
   bot.callbackQuery('main_menu', showMainMenu);
   
   // Реєстрація обробників динамічних callback даних

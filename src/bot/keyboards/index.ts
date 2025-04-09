@@ -9,7 +9,8 @@ export function createMainMenuKeyboard(): InlineKeyboard {
     .text('🎾 Запланувати гру', 'schedule_game')
     .text('📊 Додати результат', 'add_result').row()
     .text('📈 Моя статистика', 'my_stats')
-    .text('🏆 Рейтинг', 'rankings');
+    .text('🏆 Рейтинг', 'rankings').row()
+    .text('🗓️ Мої ігри', 'my_games');
 }
 
 /**
@@ -44,4 +45,15 @@ export function createSelectWinnerKeyboard(game: Game): InlineKeyboard {
     .text(`🥇 ${game.player1Username} переміг`, `winner_select:${game.player1Id}`).row()
     .text(`🥇 ${game.player2Username} переміг`, `winner_select:${game.player2Id}`).row()
     .text('❌ Скасувати', 'main_menu');
+}
+
+/**
+ * Створити клавіатуру для відображення ігор користувача за статусом
+ */
+export function createMyGamesKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text('🔄 Заплановані ігри', 'my_games_scheduled')
+    .text('✅ Зіграні ігри', 'my_games_completed').row()
+    .text('⏳ Очікують підтвердження', 'my_games_pending').row()
+    .text('🔙 Назад до меню', 'main_menu');
 }
