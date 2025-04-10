@@ -17,10 +17,9 @@ export interface User {
   gamesPlayed: number;
   gamesWon: number;
   gamesLost: number;
-  // Новые поля для дополнительной информации
   age?: number;
-  height?: number; // рост в см
-  weight?: number; // вес в кг
+  height?: string; // рост в см
+  weight?: string; // вес в кг
   forehand?: string; // тип форхенда, например: "one-handed", "two-handed"
   createdAt: Date;
   updatedAt: Date;

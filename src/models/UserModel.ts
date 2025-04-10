@@ -27,8 +27,26 @@ export async function findUserByUsername(username: string): Promise<User | null>
  * Создать нового пользователя
  */
 export async function createUser(userData: Omit<User, '_id'>): Promise<User> {
-  const result = await getUsersCollection().insertOne(userData);
-  return { ...userData, _id: result.insertedId.toString() };
+  // Ensure all fields are properly initialized with default values
+  const newUser: Omit<User, '_id'> = {
+    telegramId: userData.telegramId,
+    username: userData.username,
+    firstName: userData.firstName,
+    lastName: userData.lastName || '',
+    points: userData.points || 0,
+    gamesPlayed: userData.gamesPlayed || 0,
+    gamesWon: userData.gamesWon || 0,
+    gamesLost: userData.gamesLost || 0,
+    age: userData.age || undefined,
+    height: userData.height || '',
+    weight: userData.weight || '',
+    forehand: userData.forehand || '',
+    createdAt: userData.createdAt || new Date(),
+    updatedAt: userData.updatedAt || new Date()
+  };
+  
+  const result = await getUsersCollection().insertOne(newUser);
+  return { ...newUser, _id: result.insertedId.toString() };
 }
 
 /**
@@ -102,8 +120,8 @@ export async function registerWebUser(userData: {
   firstName: string;
   lastName?: string;
   age?: number;
-  height?: number;
-  weight?: number;
+  height?: string;
+  weight?: string;
   forehand?: string;
 }): Promise<User> {
   // Генерация временного отрицательного telegramId для веб-пользователей
@@ -115,15 +133,15 @@ export async function registerWebUser(userData: {
     telegramId: tempTelegramId,
     username: userData.username,
     firstName: userData.firstName,
-    lastName: userData.lastName,
+    lastName: userData.lastName || '',
     points: 0,
     gamesPlayed: 0,
     gamesWon: 0,
     gamesLost: 0,
-    age: userData.age,
-    height: userData.height,
-    weight: userData.weight,
-    forehand: userData.forehand,
+    age: userData.age || undefined,
+    height: userData.height || '',
+    weight: userData.weight || '',
+    forehand: userData.forehand || '',
     createdAt: now,
     updatedAt: now
   };
@@ -139,8 +157,8 @@ export async function updateUserProfile(userId: number, profileData: {
   firstName?: string;
   lastName?: string;
   age?: number;
-  height?: number;
-  weight?: number;
+  height?: string;
+  weight?: string;
   forehand?: string;
 }): Promise<User | null> {
   const result = await getUsersCollection().findOneAndUpdate(

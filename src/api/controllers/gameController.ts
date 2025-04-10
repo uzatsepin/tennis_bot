@@ -200,6 +200,82 @@ export async function submitGameResults(req: Request, res: Response): Promise<vo
 }
 
 /**
+ * Подтвердить игру
+ */
+export async function confirmGame(req: Request, res: Response): Promise<void> {
+  try {
+    const gameId = req.params.id;
+    const { userId } = req.body; // ID пользователя, который подтверждает игру
+    
+    // Получаем игру
+    const game = await gameModel.getGameById(gameId);
+    
+    if (!game) {
+      res.status(404).json({ error: 'Игра не найдена' });
+      return;
+    }
+    
+    // Проверяем, что игра в статусе PENDING
+    if (game.status !== GameStatus.PENDING) {
+      res.status(400).json({ error: 'Игра не находится в статусе ожидания подтверждения' });
+      return;
+    }
+    
+    // Проверяем, что запрос отправлен вторым игроком
+    if (Number(userId) !== game.player2Id) {
+      res.status(403).json({ error: 'Только приглашенный игрок может подтвердить игру' });
+      return;
+    }
+    
+    // Обновляем статус игры на SCHEDULED
+    const updatedGame = await gameModel.updateGameStatus(gameId, GameStatus.SCHEDULED);
+    
+    res.json(updatedGame);
+  } catch (error) {
+    console.error('Error in confirmGame controller:', error);
+    res.status(500).json({ error: 'Не удалось подтвердить игру' });
+  }
+}
+
+/**
+ * Отклонить игру
+ */
+export async function rejectGame(req: Request, res: Response): Promise<void> {
+  try {
+    const gameId = req.params.id;
+    const { userId } = req.body; // ID пользователя, который отклоняет игру
+    
+    // Получаем игру
+    const game = await gameModel.getGameById(gameId);
+    
+    if (!game) {
+      res.status(404).json({ error: 'Игра не найдена' });
+      return;
+    }
+    
+    // Проверяем, что игра в статусе PENDING
+    if (game.status !== GameStatus.PENDING) {
+      res.status(400).json({ error: 'Игра не находится в статусе ожидания подтверждения' });
+      return;
+    }
+    
+    // Проверяем, что запрос отправлен вторым игроком
+    if (Number(userId) !== game.player2Id) {
+      res.status(403).json({ error: 'Только приглашенный игрок может отклонить игру' });
+      return;
+    }
+    
+    // Обновляем статус игры на REJECTED
+    const updatedGame = await gameModel.updateGameStatus(gameId, GameStatus.REJECTED);
+    
+    res.json(updatedGame);
+  } catch (error) {
+    console.error('Error in rejectGame controller:', error);
+    res.status(500).json({ error: 'Не удалось отклонить игру' });
+  }
+}
+
+/**
  * Получить количество игр
  */
 export async function getGamesCount(req: Request, res: Response): Promise<void> {
