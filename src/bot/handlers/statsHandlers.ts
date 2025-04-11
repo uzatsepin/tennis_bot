@@ -89,6 +89,8 @@ export async function handleRankings(ctx: BotContext): Promise<void> {
         prefix = '🥈';
       } else if (ranking.position === 3) {
         prefix = '🥉';
+      } else if (ranking.position > 3) {
+        prefix = '🏅';
       }
       
       rankingsMessage += `${prefix} ${ranking.username} - ${ranking.points} очків\n`;

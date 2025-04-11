@@ -14,7 +14,7 @@ export async function handleScheduleGame(ctx: BotContext): Promise<void> {
   ctx.session.step = 'schedule_game_username';
   ctx.session.gameData = {};
   
-  await ctx.editMessageText('👥 З ким бажаєте зіграти? Будь ласка, введіть ім\'я користувача вашого опонента.');
+  await ctx.editMessageText('👥 З ким бажаєте зіграти? Будь ласка, введіть ім\'я користувача вашого опонента.\n\nПриклад @username');
 }
 
 /**
@@ -75,7 +75,9 @@ export async function handleGameSelect(ctx: BotContext): Promise<void> {
       gameId
     };
     
-    await ctx.editMessageText('📝 Будь ласка, введіть рахунок матчу (наприклад, "6:4, 7:5").');
+    await ctx.editMessageText('📝 Будь ласка, введіть рахунок матчу (наприклад, "6:4, 7:5").\n\nОбовʼязково більший рахунок має бути першим', {
+      reply_markup: createBackToMenuKeyboard()
+    });
   } catch (error) {
     console.error(`Error handling game selection for ID ${gameId}:`, error);
     await ctx.editMessageText('❌ Виникла помилка при виборі гри. Будь ласка, спробуйте пізніше.', {
