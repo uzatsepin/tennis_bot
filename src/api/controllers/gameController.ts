@@ -9,8 +9,13 @@ import { sendGameInvitation, sendGameResults } from '../../bot/notifications';
  */
 export async function getGames(req: Request, res: Response): Promise<void> {
   try {
+    // Определяем параметры пагинации с значениями по умолчанию
+    const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
     const status = req.query.status as string | undefined;
+    
+    // Вычисляем смещение для пагинации
+    const skip = (page - 1) * limit;
     
     // Получаем коллекцию игр
     const gamesCollection = getDb().collection<Game>('games');
@@ -22,6 +27,7 @@ export async function getGames(req: Request, res: Response): Promise<void> {
     const pipeline = [
       matchStage,
       { $sort: { scheduledTime: -1 } },
+      { $skip: skip },
       { $limit: limit },
       // Lookup для player1
       {
@@ -50,9 +56,29 @@ export async function getGames(req: Request, res: Response): Promise<void> {
       }
     ];
     
+    // Получаем игры для текущей страницы
     const gamesWithUsers = await gamesCollection.aggregate(pipeline).toArray();
     
-    res.json(gamesWithUsers);
+    // Получаем общее количество игр для метаданных пагинации
+    const countPipeline = [
+      matchStage,
+      { $count: "total" }
+    ];
+    const totalResults = await gamesCollection.aggregate(countPipeline).toArray();
+    const total = totalResults.length > 0 ? totalResults[0].total : 0;
+    
+    // Формируем ответ с данными пагинации
+    res.json({
+      games: gamesWithUsers,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1
+      }
+    });
   } catch (error) {
     console.error('Error in getGames controller:', error);
     res.status(500).json({ error: 'Не удалось получить игры' });
