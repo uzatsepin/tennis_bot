@@ -13,6 +13,8 @@ export async function getGames(req: Request, res: Response): Promise<void> {
     const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
     const status = req.query.status as string | undefined;
+    const fromDate = req.query.fromDate as string | undefined;
+    const toDate = req.query.toDate as string | undefined;
     
     // Вычисляем смещение для пагинации
     const skip = (page - 1) * limit;
@@ -20,8 +22,27 @@ export async function getGames(req: Request, res: Response): Promise<void> {
     // Получаем коллекцию игр
     const gamesCollection = getDb().collection<Game>('games');
     
-    // Формируем условия поиска, если указан статус
-    const matchStage = status ? { $match: { status: status as GameStatus } } : { $match: {} };
+    // Формируем условия поиска с учетом статуса и дат
+    let matchConditions: any = {};
+    
+    if (status) {
+      matchConditions.status = status as GameStatus;
+    }
+    
+    // Добавляем фильтрацию по диапазону дат, если указаны даты
+    if (fromDate || toDate) {
+      matchConditions.scheduledTime = {};
+      
+      if (fromDate) {
+        matchConditions.scheduledTime.$gte = new Date(fromDate);
+      }
+      
+      if (toDate) {
+        matchConditions.scheduledTime.$lte = new Date(toDate);
+      }
+    }
+    
+    const matchStage = { $match: matchConditions };
     
     // Создаем pipeline для агрегации
     const pipeline = [
