@@ -1,6 +1,7 @@
 import { BotContext } from '../BotService';
 import * as gameModel from '../../models/GameModel';
 import { GameStatus } from '../../models/types';
+import { createMainMenuKeyboard } from '../keyboards';
 
 /**
  * Обробник підтвердження гри
@@ -66,7 +67,9 @@ export async function handleConfirmGame(ctx: BotContext): Promise<void> {
         hour: '2-digit',
         minute: '2-digit'
       })}\n\nГарної гри! 🏆`
-    );
+    , {
+      reply_markup: createMainMenuKeyboard()
+    });
     
     // Відправляємо сповіщення гравцю, який створив гру
     await ctx.api.sendMessage(
@@ -78,7 +81,9 @@ export async function handleConfirmGame(ctx: BotContext): Promise<void> {
         hour: '2-digit',
         minute: '2-digit'
       })}\n\nГарної гри! 🏆`
-    );
+    , {
+      reply_markup: createMainMenuKeyboard()
+    });
     
   } catch (error) {
     console.error('Error handling game confirmation:', error);
@@ -153,7 +158,9 @@ export async function handleRejectGame(ctx: BotContext): Promise<void> {
         hour: '2-digit',
         minute: '2-digit'
       })}`
-    );
+    , {
+      reply_markup: createMainMenuKeyboard()
+    });
     
     // Відправляємо сповіщення гравцю, який створив гру
     await ctx.api.sendMessage(
@@ -165,7 +172,9 @@ export async function handleRejectGame(ctx: BotContext): Promise<void> {
         hour: '2-digit',
         minute: '2-digit'
       })}`
-    );
+    , {
+      reply_markup: createMainMenuKeyboard()
+    });
     
   } catch (error) {
     console.error('Error handling game rejection:', error);

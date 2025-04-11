@@ -1,5 +1,6 @@
 import { Game } from '../models/types';
 import { getBotInstance } from './botInstance';
+import { createMainMenuKeyboard } from './keyboards';
 
 /**
  * Відправляє сповіщення про запрошення до гри
@@ -98,8 +99,8 @@ ${game.score}
     
     // Відправляємо повідомлення обом гравцям
     await Promise.all([
-      bot.api.sendMessage(winnerId, winnerMessage, { parse_mode: 'HTML' }),
-      bot.api.sendMessage(loserId, loserMessage, { parse_mode: 'HTML' })
+      bot.api.sendMessage(winnerId, winnerMessage, { parse_mode: 'HTML', reply_markup: createMainMenuKeyboard() }),
+      bot.api.sendMessage(loserId, loserMessage, { parse_mode: 'HTML', reply_markup: createMainMenuKeyboard() })
     ]);
     
     console.log(`Game results notifications sent for game ${game._id}`);
