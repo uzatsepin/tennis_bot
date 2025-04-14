@@ -1,3 +1,5 @@
+import { ObjectId } from "mongodb";
+
 export enum GameStatus {
   DRAFT = 'draft',
   PENDING = 'pending', // Ожидает подтверждения от оппонента
@@ -18,26 +20,35 @@ export interface User {
   gamesWon: number;
   gamesLost: number;
   age?: number;
-  height?: string; // рост в см
-  weight?: string; // вес в кг
-  forehand?: string; // тип форхенда, например: "one-handed", "two-handed"
+  height?: string;
+  weight?: string;
+  forehand?: string;
+  leagues?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
+export interface UserLeague {
+  _id?: string;
+  userId: number;
+  leagueId: string;
+  joinedAt: Date;
+}
+
 export interface Game {
   _id?: string;
-  player1Id: number; // Telegram user ID of player 1
-  player2Id: number; // Telegram user ID of player 2
+  player1Id: number;
+  player2Id: number;
   player1Username: string;
   player2Username: string;
   scheduledTime: Date;
   status: GameStatus;
-  score?: string; // e.g. "6:4, 7:5"
-  winnerId?: number; // Telegram user ID of the winner
+  score?: string;
+  winnerId?: number;
+  leagueId?: string;  // ID лиги, если игра относится к конкретной лиге
   createdAt: Date;
   updatedAt: Date;
-  createdBy: number; // Telegram user ID of the creator
+  createdBy: number;
 }
 
 export interface Ranking {
@@ -46,10 +57,11 @@ export interface Ranking {
   username: string;
   points: number;
   position: number;
+  leagueId?: string | ObjectId;
+  league: League;
   updatedAt: Date;
 }
 
-// Интерфейсы для сессии бота
 export interface GameData {
   opponentUsername?: string;
   scheduledTime?: Date;
@@ -67,4 +79,20 @@ export interface OpponentStats {
   opponentId: number;
   opponentUsername: string;
   gamesCount: number;
+}
+
+export interface League {
+  _id?: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface League {
+  _id?: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

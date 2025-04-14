@@ -66,7 +66,7 @@ ${lastGameInfo}
  */
 export async function handleRankings(ctx: BotContext): Promise<void> {
   try {
-    const rankings = await rankingModel.getRankings(10);
+    const rankings = await rankingModel.getGlobalRankings(10);
     
     if (rankings.length === 0) {
       await ctx.editMessageText('⚠️ Рейтинг поки недоступний. Зіграйте кілька ігор спочатку!', {

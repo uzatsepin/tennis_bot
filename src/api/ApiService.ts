@@ -37,7 +37,7 @@ export function createApp() {
 export async function getStats(req: Request, res: Response): Promise<void> {
   try {
     const topPlayers = await userModel.getTopPlayers(3);
-    const rankings = await rankingModel.getRankings(10);
+    const rankings = await rankingModel.getGlobalRankings(10);
     const totalUsers = await userModel.getTotalUsersCount();
     const totalGames = await gameModel.getTotalGamesCount();
     const completedGames = await gameModel.getCompletedGamesCount();

@@ -119,7 +119,7 @@ export async function handleWinnerSelect(ctx: BotContext): Promise<void> {
     
     // Оновлення рейтингів
     const rankingModel = await import('../../models/RankingModel');
-    await rankingModel.updateRankings();
+    await rankingModel.updateAllRankings();
     
     await ctx.editMessageText(`✅ Результати успішно збережені! 🏆 Гра завершена з рахунком: ${score}`, {
       reply_markup: createBackToMenuKeyboard()
